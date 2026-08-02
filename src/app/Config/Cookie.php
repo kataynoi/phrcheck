@@ -104,4 +104,18 @@ class Cookie extends BaseConfig
      * @see https://tools.ietf.org/html/rfc2616#section-2.2
      */
     public bool $raw = false;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        // บน production ที่เปิดผ่าน HTTPS ให้ส่ง session/CSRF cookie
+        // เฉพาะช่องทางที่เข้ารหัสเท่านั้น (ตั้ง COOKIE_SECURE=true ใน .env)
+        // บนเครื่อง local ที่เป็น http ต้องเป็น false ไม่งั้นล็อกอินไม่ติด
+        $secure = getenv('COOKIE_SECURE');
+
+        if (is_string($secure) && $secure !== '') {
+            $this->secure = filter_var($secure, FILTER_VALIDATE_BOOLEAN);
+        }
+    }
 }

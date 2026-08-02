@@ -43,6 +43,8 @@ Three services on `phpcheckbook-net`. Both nginx and php bind-mount `./src` at `
 
 **Config comes from environment variables, not `src/.env`.** Secrets live in the project-root `.env`, are passed to the `php` service via `docker-compose.yml`, and are read with `getenv()` in `app/Config/Database.php`, `app/Config/App.php`, and `app/Libraries/LineLogin.php`. `src/.env` only sets `CI_ENVIRONMENT`.
 
+Production deployment steps live in [DEPLOY.md](DEPLOY.md). The app runs behind the server's existing nginx reverse proxy at `/phrcheck/`; `proxy_pass http://127.0.0.1:8087/` **must** keep its trailing slash so the prefix is stripped before the request reaches CI4, otherwise every route 404s. `COOKIE_SECURE`, `TRUSTED_PROXY_IPS`, `NGINX_BIND`, and `DB_BIND` exist so production can force HTTPS-only cookies, trust `X-Forwarded-*`, and bind both published ports to loopback — the defaults are the permissive local ones.
+
 `APP_BASE_URL` and `APP_INDEX_PAGE` drive `Config\App`. Local uses clean URLs (`APP_INDEX_PAGE=` empty, nginx rewrites); the production host serves the app under `/phrcheck/` with `index.php` in the path, so it needs `APP_INDEX_PAGE=index.php` or every generated link 404s. `.env` carries both sets, with the production block commented out.
 
 Two settings that must not drift:

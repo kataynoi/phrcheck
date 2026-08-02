@@ -3,8 +3,11 @@ services:
   nginx:
     image: nginx:alpine
     container_name: phpcheck-nginx
+    restart: unless-stopped
     ports:
-      - "8087:80"
+      # บน production ที่มี reverse proxy อยู่หน้า ให้ตั้ง NGINX_BIND=127.0.0.1:8087
+      # ใน .env เพื่อไม่ให้พอร์ตนี้เปิดออกอินเทอร์เน็ตตรง ๆ
+      - "${NGINX_BIND:-0.0.0.0:8087}:80"
     volumes:
       - ./src:/var/www/html
       - /var/www/html/vendor
@@ -35,6 +38,8 @@ services:
       LINE_CHANNEL_SECRET: ${LINE_CHANNEL_SECRET}
       LINE_CALLBACK_URL: ${LINE_CALLBACK_URL}
       ADMIN_LINE_USER_ID: ${ADMIN_LINE_USER_ID}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-}
     volumes:
       - ./src:/var/www/html
       # Anonymous volume ปกป้อง vendor/ ของ image ไม่ให้ถูก bind mount ทับ
@@ -55,7 +60,9 @@ services:
       MYSQL_PASSWORD: ${DB_PASS}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS}
     ports:
-      - "3311:3306"
+      # แอปคุยกับ db ผ่าน network ภายในอยู่แล้ว พอร์ตนี้มีไว้ต่อ Navicat/DBeaver เท่านั้น
+      # บน production ต้องตั้ง DB_BIND=127.0.0.1:3311 เพื่อไม่ให้ MySQL โผล่ออกอินเทอร์เน็ต
+      - "${DB_BIND:-0.0.0.0:3311}:3306"
     volumes:
       - cmd_db_data:/var/lib/mysql
       # สคริปต์ใน initdb.d รันตามลำดับชื่อไฟล์ และรันครั้งเดียวตอน volume ยังว่าง

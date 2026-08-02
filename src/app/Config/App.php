@@ -222,5 +222,16 @@ class App extends BaseConfig
         if (is_string($indexPage)) {
             $this->indexPage = $indexPage;
         }
+
+        // เมื่อรันหลัง reverse proxy ต้องบอก CI4 ว่าเชื่อ X-Forwarded-* จาก IP ไหน
+        // ไม่งั้น IP ที่ log ไว้จะเป็นของ proxy และ isSecure() จะมองว่าเป็น http
+        $proxyIPs = getenv('TRUSTED_PROXY_IPS');
+
+        if (is_string($proxyIPs) && trim($proxyIPs) !== '') {
+            $this->proxyIPs = array_fill_keys(
+                array_filter(array_map('trim', explode(',', $proxyIPs))),
+                'X-Forwarded-For'
+            );
+        }
     }
 }
