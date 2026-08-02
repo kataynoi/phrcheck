@@ -1,0 +1,78 @@
+services:
+  # 1. บริการ Nginx (เว็บเซิร์ฟเวอร์)
+  nginx:
+    image: nginx:alpine
+    container_name: phpcheck-nginx
+    ports:
+      - "8087:80"
+    volumes:
+      - ./src:/var/www/html
+      - /var/www/html/vendor
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+    networks:
+      - phpcheckbook-net
+
+  # 2. บริการ PHP
+  php:
+    build:
+      # context เป็นโฟลเดอร์โปรเจกต์ทั้งหมด เพราะ Dockerfile ต้อง COPY ทั้ง
+      # ./src/composer.json และ ./docker/php/*
+      context: .
+      dockerfile: ./docker/php/Dockerfile
+    container_name: phpcheck-php
+    restart: unless-stopped
+    environment:
+      CI_ENVIRONMENT: ${CI_ENVIRONMENT:-development}
+      APP_BASE_URL: ${APP_BASE_URL}
+      APP_INDEX_PAGE: ${APP_INDEX_PAGE:-}
+      DB_HOST: db
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      LINE_CHANNEL_ID: ${LINE_CHANNEL_ID}
+      LINE_CHANNEL_SECRET: ${LINE_CHANNEL_SECRET}
+      LINE_CALLBACK_URL: ${LINE_CALLBACK_URL}
+      ADMIN_LINE_USER_ID: ${ADMIN_LINE_USER_ID}
+    volumes:
+      - ./src:/var/www/html
+      # Anonymous volume ปกป้อง vendor/ ของ image ไม่ให้ถูก bind mount ทับ
+      - /var/www/html/vendor
+    depends_on:
+      - db
+    networks:
+      - phpcheckbook-net
+
+  # 3. บริการ MySQL (ฐานข้อมูล)
+  db:
+    image: mysql:8.0
+    container_name: phpcheck-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS}
+    ports:
+      - "3311:3306"
+    volumes:
+      - cmd_db_data:/var/lib/mysql
+      # สคริปต์ใน initdb.d รันตามลำดับชื่อไฟล์ และรันครั้งเดียวตอน volume ยังว่าง
+      # 01 = dump ต้นทาง (campur, chospital), 02 = ตารางของแอป + คัดหน่วยบริการ provcode=44
+      - ./data_sample/data.sql:/docker-entrypoint-initdb.d/01-source-data.sql:ro
+      - ./docker/mysql/02-schema.sql:/docker-entrypoint-initdb.d/02-schema.sql:ro
+    networks:
+      - phpcheckbook-net
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+07:00
+
+volumes:
+  cmd_db_data:
+
+# ให้ Docker Compose สร้างและจัดการ Network ของตัวเอง
+networks:
+  phpcheckbook-net: {}
