@@ -95,6 +95,18 @@ docker compose exec db mysql -u root -p"$DB_ROOT_PASS" phrcheck_db \
 curl -I http://127.0.0.1:8087/login     # ต้องได้ 200
 ```
 
+**ตรวจว่าโหมดเป็น production จริง** (สำคัญ — ถ้ายังเป็น development หน้า error จะโชว์ path ไฟล์และ stack trace ให้คนนอกเห็น):
+
+```bash
+docker compose exec php php -r 'echo getenv("CI_ENVIRONMENT") ?: "(ไม่ได้ตั้ง)", PHP_EOL;'
+# ต้องได้ production
+
+curl -s http://127.0.0.1:8087/login | grep -c debugbar
+# ต้องได้ 0
+```
+
+ถ้าได้ `development` แปลว่าแก้ `.env` แล้วยังไม่ได้ `docker compose up -d` ใหม่ (แก้ `.env` เฉย ๆ ไม่มีผลจนกว่าจะสร้าง container ใหม่)
+
 ---
 
 ## 4. ตั้ง nginx reverse proxy
