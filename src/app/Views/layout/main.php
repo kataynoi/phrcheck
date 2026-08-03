@@ -16,6 +16,12 @@
         .table thead th { font-size:.82rem; white-space:nowrap; background:#f8f9fb; }
         .table td { font-size:.88rem; vertical-align:middle; }
         .table-sticky thead th { position:sticky; top:0; z-index:2; }
+        /* แถวรวมค้างอยู่ท้ายตารางเสมอ แม้ตารางจะเลื่อนอยู่ */
+        .table-sticky tfoot td {
+            position:sticky; bottom:0; z-index:2;
+            background:#eef2f7; font-weight:700;
+            border-top:2px solid #b6c2d2;
+        }
         .badge-status { font-weight:500; }
         code.ref { font-size:.85rem; }
     </style>

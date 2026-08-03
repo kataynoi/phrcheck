@@ -91,6 +91,19 @@
 <div class="card">
     <div class="card-body">
         <h6 class="fw-bold mb-3">สรุปรายหน่วยบริการ</h6>
+        <?php
+            // ยอดรวมท้ายตาราง — Record และแต่ละสาเหตุบวกตรง ๆ ได้
+            $totalRecords = 0;
+            $totalStatus  = array_fill_keys(array_column($statuses, 'id'), 0);
+
+            foreach ($byHospital as $row) {
+                $totalRecords += (int) $row['records'];
+
+                foreach ($statuses as $status) {
+                    $totalStatus[$status['id']] += (int) ($row['s' . $status['id']] ?? 0);
+                }
+            }
+        ?>
         <div class="table-responsive" style="max-height:520px">
             <table class="table table-hover table-sm table-sticky mb-0">
                 <thead>
@@ -129,6 +142,26 @@
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
+
+                <?php if ($byHospital !== []): ?>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3">
+                                รวมทั้งหมด
+                                <span class="fw-normal text-muted">(<?= number_format(count($byHospital)) ?> หน่วยบริการ)</span>
+                            </td>
+                            <td class="text-end"><?= number_format($totalRecords) ?></td>
+                            <td class="text-end">
+                                <?= number_format($summary['persons']) ?>
+                                <i class="bi bi-info-circle text-muted fw-normal"
+                                   title="นับ CID ไม่ซ้ำทั้งจังหวัด — คนที่ไปรับบริการหลายหน่วยจะนับครั้งเดียว ยอดนี้จึงน้อยกว่าผลบวกในคอลัมน์"></i>
+                            </td>
+                            <?php foreach ($statuses as $status): ?>
+                                <td class="text-end"><?= number_format($totalStatus[$status['id']]) ?></td>
+                            <?php endforeach; ?>
+                        </tr>
+                    </tfoot>
+                <?php endif; ?>
             </table>
         </div>
     </div>
