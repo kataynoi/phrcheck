@@ -3,9 +3,7 @@
 
 <h4 class="fw-bold mb-1">นำเข้าข้อมูล</h4>
 <p class="text-muted small mb-3">
-    <?= $isAdmin
-        ? 'ผู้ดูแลระบบนำเข้าได้ทุกหน่วยบริการ'
-        : 'นำเข้าได้เฉพาะข้อมูลของ ' . esc($user['hosname']) . ' (รหัส ' . esc($user['hoscode']) . ')' ?>
+    นำเข้าได้เฉพาะข้อมูลของ <?= esc($scopeLabel) ?>
 </p>
 
 <?php $result = session()->getFlashdata('import_result'); ?>
@@ -107,14 +105,14 @@ update_datetime</pre>
 
     <div class="col-lg-7">
         <div class="card"><div class="card-body">
-            <h6 class="fw-bold mb-3">ประวัติการนำเข้า<?= $isAdmin ? ' (ทุกผู้ใช้)' : '' ?></h6>
+            <h6 class="fw-bold mb-3">ประวัติการนำเข้า<?= $showUploader ? ' (ทุกคนในขอบเขตของคุณ)' : '' ?></h6>
             <div class="table-responsive">
                 <table class="table table-sm mb-0">
                     <thead>
                         <tr>
                             <th>วันที่</th>
                             <th>ไฟล์</th>
-                            <?php if ($isAdmin): ?><th>ผู้นำเข้า</th><?php endif; ?>
+                            <?php if ($showUploader): ?><th>ผู้นำเข้า</th><?php endif; ?>
                             <th class="text-end">ทั้งหมด</th>
                             <th class="text-end">สำเร็จ</th>
                             <th class="text-end">ซ้ำ</th>
@@ -123,7 +121,7 @@ update_datetime</pre>
                     </thead>
                     <tbody>
                         <?php if ($batches === []): ?>
-                            <tr><td colspan="<?= $isAdmin ? 7 : 6 ?>" class="text-center text-muted py-4">ยังไม่มีประวัติ</td></tr>
+                            <tr><td colspan="<?= $showUploader ? 7 : 6 ?>" class="text-center text-muted py-4">ยังไม่มีประวัติ</td></tr>
                         <?php endif; ?>
                         <?php foreach ($batches as $batch): ?>
                             <tr>
@@ -131,8 +129,11 @@ update_datetime</pre>
                                 <td class="small text-truncate" style="max-width:180px" title="<?= esc($batch['filename'], 'attr') ?>">
                                     <?= esc($batch['filename']) ?>
                                 </td>
-                                <?php if ($isAdmin): ?>
-                                    <td class="small"><?= esc(trim(($batch['first_name'] ?? '') . ' ' . ($batch['last_name'] ?? ''))) ?></td>
+                                <?php if ($showUploader): ?>
+                                    <td class="small">
+                                        <?= esc(trim(($batch['first_name'] ?? '') . ' ' . ($batch['last_name'] ?? ''))) ?>
+                                        <div class="text-muted"><?= esc($batch['hosname'] ?? '') ?></div>
+                                    </td>
                                 <?php endif; ?>
                                 <td class="text-end"><?= number_format((int) $batch['total_rows']) ?></td>
                                 <td class="text-end text-success fw-semibold"><?= number_format((int) $batch['inserted_rows']) ?></td>

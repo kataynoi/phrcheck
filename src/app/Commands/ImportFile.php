@@ -3,6 +3,7 @@
 namespace App\Commands;
 
 use App\Libraries\EncounterImporter;
+use App\Models\HospitalModel;
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
 
@@ -24,8 +25,9 @@ class ImportFile extends BaseCommand
     ];
 
     protected $options = [
-        '--user'    => 'id ของผู้ใช้ที่จะบันทึกเป็นผู้นำเข้า (ไม่ระบุ = ไม่บันทึกประวัติ)',
-        '--hoscode' => 'จำกัดให้นำเข้าเฉพาะหน่วยบริการนี้ (ไม่ระบุ = ทุกหน่วย)',
+        '--user'     => 'id ของผู้ใช้ที่จะบันทึกเป็นผู้นำเข้า (ไม่ระบุ = ไม่บันทึกประวัติ)',
+        '--hoscode'  => 'จำกัดให้นำเข้าเฉพาะหน่วยบริการนี้',
+        '--distcode' => 'จำกัดให้นำเข้าเฉพาะหน่วยบริการในอำเภอนี้',
     ];
 
     public function run(array $params)
@@ -38,13 +40,29 @@ class ImportFile extends BaseCommand
             return EXIT_ERROR;
         }
 
-        $userId  = CLI::getOption('user');
-        $hoscode = CLI::getOption('hoscode');
+        $userId    = CLI::getOption('user');
+        $hoscode   = CLI::getOption('hoscode');
+        $distcode  = CLI::getOption('distcode');
+
+        // แปลงตัวเลือกเป็นรายการรหัสหน่วยบริการที่อนุญาต (null = ไม่จำกัด)
+        $allowedCodes = null;
+
+        if (is_string($distcode) && $distcode !== '') {
+            $allowedCodes = (new HospitalModel())->codesInDistrict($distcode);
+
+            if ($allowedCodes === []) {
+                CLI::error('ไม่พบหน่วยบริการในอำเภอรหัส ' . $distcode);
+
+                return EXIT_ERROR;
+            }
+        } elseif (is_string($hoscode) && $hoscode !== '') {
+            $allowedCodes = [$hoscode];
+        }
 
         $result = (new EncounterImporter())->import(
             $file,
             basename($file),
-            is_string($hoscode) ? $hoscode : null,
+            $allowedCodes,
             is_numeric($userId) ? (int) $userId : null
         );
 

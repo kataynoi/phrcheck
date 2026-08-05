@@ -4,9 +4,7 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
     <div>
         <h4 class="fw-bold mb-1">Dashboard สรุปผลการตรวจสอบ</h4>
-        <p class="text-muted mb-0 small">
-            <?= $isAdmin ? 'ทุกหน่วยบริการในจังหวัดมหาสารคาม' : esc($user['hosname']) ?>
-        </p>
+        <p class="text-muted mb-0 small"><?= esc($scopeLabel) ?></p>
     </div>
     <form method="get" class="d-flex align-items-center gap-2">
         <label class="text-muted small mb-0">ช่วงเวลา</label>

@@ -40,7 +40,7 @@ class UserModel extends Model
      */
     public function listWithHospital(?string $status = null): array
     {
-        $builder = $this->select('users.*, hospitals.hosname')
+        $builder = $this->select('users.*, hospitals.hosname, hospitals.ampurname')
             ->join('hospitals', 'hospitals.hoscode = users.hoscode', 'left');
 
         if ($status !== null && $status !== '') {

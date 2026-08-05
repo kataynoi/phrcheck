@@ -12,11 +12,19 @@ class Upload extends BaseController
 
     public function index()
     {
+        $scope = $this->scope();
+
         return view('upload/index', [
             'user'    => $this->currentUser(),
             'isAdmin' => $this->isAdmin(),
-            'batches' => (new UploadBatchModel())->recent(
-                $this->isAdmin() ? null : (int) $this->session->get('user_id')
+            // ประวัติของคนอื่นจะโผล่มาได้ก็ต่อเมื่อขอบเขตครอบมากกว่าตัวเอง
+            'showUploader' => $scope->isAll() || $scope->isDistrict(),
+            'scopeLabel'   => $scope->label(),
+            // ประวัติการนำเข้า: admin เห็นทุกคน, ระดับอำเภอเห็นของหน่วยบริการในอำเภอ,
+            // ผู้ใช้ทั่วไปเห็นเฉพาะที่ตัวเองนำเข้า
+            'batches' => (new UploadBatchModel())->recentInScope(
+                $scope,
+                (int) $this->session->get('user_id')
             ),
         ]);
     }
@@ -41,7 +49,7 @@ class Upload extends BaseController
         $result = (new EncounterImporter())->import(
             $file->getTempName(),
             $file->getClientName(),
-            $this->scopeHoscode(),
+            $this->scope()->allowedCodes(),
             (int) $this->session->get('user_id')
         );
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Libraries\DataScope;
 use CodeIgniter\Model;
 
 class EncounterMaskModel extends Model
@@ -56,16 +57,19 @@ class EncounterMaskModel extends Model
      * เพื่อไม่ให้มีทางลืมใส่เงื่อนไขในหน้าใดหน้าหนึ่ง
      *
      * @param array<string, mixed> $filters
+     *
+     * @return $this
      */
-    public function scoped(?string $hoscode, array $filters = []): self
+    public function scoped(DataScope $scope, array $filters = []): self
     {
         $this->select('encounter_masks.*, check_statuses.name AS status_name, check_statuses.color AS status_color, hospitals.hosname')
             ->join('check_statuses', 'check_statuses.id = encounter_masks.check_status_id', 'left')
             ->join('hospitals', 'hospitals.hoscode = encounter_masks.code', 'left');
 
-        // $hoscode = null หมายถึง admin (เห็นทุกหน่วยบริการ)
-        if ($hoscode !== null) {
-            $this->where('encounter_masks.code', $hoscode);
+        $condition = $scope->sqlCondition('encounter_masks.code');
+
+        if ($condition !== '') {
+            $this->where($condition, null, false);
         }
 
         if (! empty($filters['code'])) {

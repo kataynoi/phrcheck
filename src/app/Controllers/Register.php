@@ -76,12 +76,16 @@ class Register extends BaseController
             'hoscode'    => $hoscode,
         ]);
 
-        $user = $users->find($userId);
+        $user      = $users->find($userId);
+        $hospitals = new HospitalModel();
+        $distcode  = $hospitals->districtOf($user['hoscode']);
 
         $this->session->set([
             'name'       => trim($user['first_name'] . ' ' . $user['last_name']),
             'hoscode'    => $user['hoscode'],
-            'hosname'    => (new HospitalModel())->nameOf($user['hoscode']),
+            'hosname'    => $hospitals->nameOf($user['hoscode']),
+            'distcode'   => $distcode,
+            'ampurname'  => $hospitals->districtName($distcode),
             'status'     => $user['status'],
             'registered' => true,
         ]);

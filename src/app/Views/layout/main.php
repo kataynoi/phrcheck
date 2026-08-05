@@ -64,11 +64,18 @@
             <div class="d-flex align-items-center text-white gap-3">
                 <div class="text-end small lh-sm d-none d-lg-block">
                     <div class="fw-semibold"><?= esc($user['name'] ?? '') ?>
-                        <?php if (! empty($isAdmin)): ?>
-                            <span class="badge bg-warning text-dark ms-1">Admin</span>
+                        <?php if (($user['role'] ?? '') === 'admin'): ?>
+                            <span class="badge bg-warning text-dark ms-1">Admin จังหวัด</span>
+                        <?php elseif (($user['role'] ?? '') === 'district'): ?>
+                            <span class="badge bg-info text-dark ms-1">Admin อำเภอ</span>
                         <?php endif; ?>
                     </div>
-                    <div class="opacity-75"><?= esc($user['hosname'] ?? '') ?></div>
+                    <div class="opacity-75">
+                        <?= esc($user['hosname'] ?? '') ?>
+                        <?php if (($user['role'] ?? '') === 'district' && ! empty($user['ampurname'])): ?>
+                            · อ.<?= esc($user['ampurname']) ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <?php if (! empty($user['picture'])): ?>
                     <img src="<?= esc($user['picture'], 'attr') ?>" alt="" width="36" height="36" class="rounded-circle border border-2 border-light">

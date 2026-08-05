@@ -64,7 +64,10 @@ CREATE TABLE `users` (
   `first_name`    VARCHAR(100) NULL DEFAULT NULL,
   `last_name`     VARCHAR(100) NULL DEFAULT NULL,
   `hoscode`       CHAR(5)      NULL DEFAULT NULL,
-  `role`          ENUM('admin','user')                NOT NULL DEFAULT 'user',
+  -- admin    = เห็น/แก้ได้ทุกหน่วยบริการในจังหวัด
+  -- district = เห็น/แก้ได้ทุกหน่วยบริการในอำเภอเดียวกับ hoscode ของตัวเอง
+  -- user     = เฉพาะหน่วยบริการของตัวเอง
+  `role`          ENUM('admin','district','user')     NOT NULL DEFAULT 'user',
   `status`        ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
   `approved_at`   DATETIME     NULL DEFAULT NULL,
   `approved_by`   INT UNSIGNED NULL DEFAULT NULL,

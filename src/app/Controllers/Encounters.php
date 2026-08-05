@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Libraries\DataScope;
 use App\Models\CheckStatusModel;
 use App\Models\EncounterMaskModel;
 use App\Models\HospitalModel;
@@ -14,20 +15,25 @@ class Encounters extends BaseController
         $filters = $this->filters();
         $perPage = 25;
 
-        $model = new EncounterMaskModel();
-        $rows  = $model->scoped($this->scopeHoscode(), $filters)
+        $scope     = $this->scope();
+        $hospitals = $this->hospitalOptions($scope);
+        $model     = new EncounterMaskModel();
+        $rows      = $model->scoped($scope, $filters)
             ->orderBy('encounter_masks.create_datetime', 'DESC')
             ->orderBy('encounter_masks.id', 'DESC')
             ->paginate($perPage);
 
         return view('encounters/index', [
-            'rows'      => $rows,
-            'pager'     => $model->pager,
-            'filters'   => $filters,
-            'statuses'  => (new CheckStatusModel())->ordered(),
-            'hospitals' => $this->isAdmin() ? (new HospitalModel())->options() : [],
-            'isAdmin'   => $this->isAdmin(),
-            'user'      => $this->currentUser(),
+            'rows'     => $rows,
+            'pager'    => $model->pager,
+            'filters'  => $filters,
+            'statuses' => (new CheckStatusModel())->ordered(),
+            // ตัวกรอง + คอลัมน์หน่วยบริการมีประโยชน์เมื่อขอบเขตครอบมากกว่า 1 แห่ง
+            'hospitals'  => $hospitals,
+            'multiUnit'  => $hospitals !== [],
+            'isAdmin'    => $this->isAdmin(),
+            'scopeLabel' => $scope->label(),
+            'user'       => $this->currentUser(),
         ]);
     }
 
@@ -82,11 +88,11 @@ class Encounters extends BaseController
 
         $builder = $model->whereIn('id', $ids);
 
-        // ผู้ใช้ทั่วไปแก้ได้เฉพาะหน่วยบริการตัวเอง — กันการยิง id ของหน่วยอื่นเข้ามาตรง ๆ
-        $scope = $this->scopeHoscode();
+        // ใส่ขอบเขตซ้ำใน WHERE — กันการยิง id ของหน่วยบริการนอกขอบเขตเข้ามาตรง ๆ
+        $condition = $this->scope()->sqlCondition('code');
 
-        if ($scope !== null) {
-            $builder->where('code', $scope);
+        if ($condition !== '') {
+            $builder->where($condition, null, false);
         }
 
         $builder->set([
@@ -108,7 +114,7 @@ class Encounters extends BaseController
     public function export(): ResponseInterface
     {
         $rows = (new EncounterMaskModel())
-            ->scoped($this->scopeHoscode(), $this->filters())
+            ->scoped($this->scope(), $this->filters())
             ->orderBy('encounter_masks.create_datetime', 'DESC')
             ->findAll(50000);
 
@@ -154,13 +160,37 @@ class Encounters extends BaseController
      */
     private function filters(): array
     {
+        // ตัวกรองหน่วยบริการเปิดให้เฉพาะคนที่ขอบเขตครอบมากกว่า 1 แห่ง
+        // ส่วนคนที่มีหน่วยบริการเดียว ปล่อยให้กรองก็ไม่มีความหมาย
+        $canFilterByCode = $this->isAdmin() || $this->isDistrictAdmin();
+
         return [
             'q'         => trim((string) $this->request->getGet('q')),
             'status'    => (string) $this->request->getGet('status'),
-            'code'      => $this->isAdmin() ? (string) $this->request->getGet('code') : '',
+            'code'      => $canFilterByCode ? (string) $this->request->getGet('code') : '',
             'date_from' => (string) $this->request->getGet('date_from'),
             'date_to'   => (string) $this->request->getGet('date_to'),
         ];
+    }
+
+    /**
+     * รายชื่อหน่วยบริการสำหรับ dropdown ตัวกรอง — จำกัดตามขอบเขตของผู้ใช้
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function hospitalOptions(DataScope $scope): array
+    {
+        $hospitals = new HospitalModel();
+
+        if ($scope->isAll()) {
+            return $hospitals->options();
+        }
+
+        if ($scope->isDistrict()) {
+            return $hospitals->inDistrict((string) $this->session->get('distcode'));
+        }
+
+        return [];
     }
 
     private function statusExists(int $statusId): bool
@@ -173,8 +203,6 @@ class Encounters extends BaseController
      */
     private function canTouch(array $row): bool
     {
-        $scope = $this->scopeHoscode();
-
-        return $scope === null || $row['code'] === $scope;
+        return $this->scope()->allows($row['code'] ?? null);
     }
 }

@@ -4,9 +4,7 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
     <div>
         <h4 class="fw-bold mb-1">รายการตรวจสอบ</h4>
-        <p class="text-muted mb-0 small">
-            <?= $isAdmin ? 'ทุกหน่วยบริการ' : esc($user['hosname']) ?>
-        </p>
+        <p class="text-muted mb-0 small"><?= esc($scopeLabel) ?></p>
     </div>
     <a href="<?= site_url('encounters/export') . '?' . http_build_query($filters) ?>" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-download me-1"></i>ดาวน์โหลด CSV
@@ -22,7 +20,7 @@
                    placeholder="CID / encounter_ref_code / ชื่อเจ้าหน้าที่"
                    value="<?= esc($filters['q']) ?>">
         </div>
-        <?php if ($isAdmin): ?>
+        <?php if ($multiUnit): ?>
             <div class="col-md-3">
                 <label class="form-label small mb-1">หน่วยบริการ</label>
                 <select name="code" class="form-select form-select-sm">
@@ -82,7 +80,7 @@
                 <thead>
                     <tr>
                         <th style="width:34px"><input type="checkbox" class="form-check-input" id="checkAll"></th>
-                        <?php if ($isAdmin): ?><th>หน่วยบริการ</th><?php endif; ?>
+                        <?php if ($multiUnit): ?><th>หน่วยบริการ</th><?php endif; ?>
                         <th>CID</th>
                         <th>encounter_ref_code</th>
                         <th>เจ้าหน้าที่</th>
@@ -95,7 +93,7 @@
                 <tbody>
                     <?php if ($rows === []): ?>
                         <tr>
-                            <td colspan="<?= $isAdmin ? 9 : 8 ?>" class="text-center text-muted py-5">
+                            <td colspan="<?= $multiUnit ? 9 : 8 ?>" class="text-center text-muted py-5">
                                 ไม่พบข้อมูลตามเงื่อนไข
                             </td>
                         </tr>
@@ -104,7 +102,7 @@
                     <?php foreach ($rows as $row): ?>
                         <tr>
                             <td><input type="checkbox" class="form-check-input row-check" name="ids[]" value="<?= $row['id'] ?>"></td>
-                            <?php if ($isAdmin): ?>
+                            <?php if ($multiUnit): ?>
                                 <td class="small">
                                     <code><?= esc($row['code']) ?></code><br>
                                     <span class="text-muted"><?= esc($row['hosname'] ?? '-') ?></span>

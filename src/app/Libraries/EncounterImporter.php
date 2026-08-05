@@ -29,14 +29,14 @@ class EncounterImporter
     private const MAX_ERRORS = 200;
 
     /**
-     * @param string      $path          พาธไฟล์
-     * @param string      $originalName  ชื่อไฟล์ที่ผู้ใช้อัปโหลด (ใช้ดูนามสกุล + เก็บลงประวัติ)
-     * @param string|null $scopeHoscode  จำกัดให้นำเข้าได้เฉพาะหน่วยบริการนี้ (null = ทุกหน่วย)
-     * @param int|null    $userId        ผู้นำเข้า (null = ไม่บันทึกประวัติ)
+     * @param string            $path          พาธไฟล์
+     * @param string            $originalName  ชื่อไฟล์ที่ผู้ใช้อัปโหลด (ใช้ดูนามสกุล + เก็บลงประวัติ)
+     * @param list<string>|null $allowedCodes  รหัสหน่วยบริการที่นำเข้าได้ (null = ทุกหน่วย)
+     * @param int|null          $userId        ผู้นำเข้า (null = ไม่บันทึกประวัติ)
      *
      * @return array<string, mixed>
      */
-    public function import(string $path, string $originalName, ?string $scopeHoscode, ?int $userId): array
+    public function import(string $path, string $originalName, ?array $allowedCodes, ?int $userId): array
     {
         $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
 
@@ -58,7 +58,7 @@ class EncounterImporter
             return ['ok' => false, 'message' => $table['fatal']];
         }
 
-        $parsed = $this->buildRows($table['header'], $table['rows'], $scopeHoscode);
+        $parsed = $this->buildRows($table['header'], $table['rows'], $allowedCodes);
 
         if (isset($parsed['fatal'])) {
             return ['ok' => false, 'message' => $parsed['fatal']];
@@ -240,10 +240,11 @@ class EncounterImporter
     /**
      * @param list<string>       $header
      * @param list<list<string>> $rows
+     * @param list<string>|null  $allowedCodes
      *
      * @return array{fatal?: string, rows?: list<array<string, mixed>>, total?: int, duplicate_in_file?: int, errors?: list<string>}
      */
-    private function buildRows(array $header, array $rows, ?string $scopeHoscode): array
+    private function buildRows(array $header, array $rows, ?array $allowedCodes): array
     {
         helper('phr');
 
@@ -299,9 +300,9 @@ class EncounterImporter
                 continue;
             }
 
-            // ผู้ใช้ทั่วไปนำเข้าได้เฉพาะหน่วยบริการตัวเอง
-            if ($scopeHoscode !== null && $code !== $scopeHoscode) {
-                $this->addError($errors, "แถว {$lineNo}: รหัสหน่วยบริการ {$code} ไม่ใช่หน่วยบริการของคุณ ({$scopeHoscode})");
+            // นำเข้าได้เฉพาะหน่วยบริการที่อยู่ในขอบเขตของผู้ใช้
+            if ($allowedCodes !== null && ! in_array($code, $allowedCodes, true)) {
+                $this->addError($errors, "แถว {$lineNo}: รหัสหน่วยบริการ {$code} อยู่นอกขอบเขตที่คุณนำเข้าได้");
                 continue;
             }
 

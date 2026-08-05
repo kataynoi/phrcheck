@@ -21,6 +21,7 @@ class Dashboard extends BaseController
             'byHospital' => $this->byHospital($statuses),
             'days'       => $this->days(),
             'isAdmin'    => $this->isAdmin(),
+            'scopeLabel' => $this->scope()->label(),
             'user'       => $this->currentUser(),
         ]);
     }
@@ -48,15 +49,11 @@ class Dashboard extends BaseController
     /**
      * ใส่เงื่อนไขขอบเขตหน่วยบริการให้ query ทุกตัว
      */
-    private function scopeSql(): string
+    private function scopeSql(string $column = 'code'): string
     {
-        $scope = $this->scopeHoscode();
+        $condition = $this->scope()->sqlCondition($column);
 
-        if ($scope === null) {
-            return '';
-        }
-
-        return ' AND code = ' . db_connect()->escape($scope);
+        return $condition === '' ? '' : ' AND ' . $condition;
     }
 
     /**
@@ -133,7 +130,7 @@ class Dashboard extends BaseController
                        ' . implode(",\n                       ", $columns) . '
                 FROM encounter_masks m
                 LEFT JOIN hospitals h ON h.hoscode = m.code
-                WHERE 1 = 1' . str_replace(' AND code =', ' AND m.code =', $this->scopeSql()) . '
+                WHERE 1 = 1' . $this->scopeSql('m.code') . '
                 GROUP BY m.code, h.hosname, h.ampurname
                 ORDER BY records DESC';
 

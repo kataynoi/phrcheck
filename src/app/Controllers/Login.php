@@ -147,13 +147,19 @@ class Login extends BaseController
         // ถือว่าลงทะเบียนแล้วเมื่อกรอกชื่อและเลือกหน่วยบริการครบ
         $registered = ! empty($user['first_name']) && ! empty($user['hoscode']);
 
+        $hospitals = new HospitalModel();
+        $distcode  = $hospitals->districtOf($user['hoscode']);
+
         $this->session->set([
-            'user_id'    => (int) $user['id'],
-            'line_id'    => $user['line_user_id'],
-            'name'       => trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) ?: ($user['display_name'] ?? ''),
-            'picture'    => $user['picture_url'] ?? '',
-            'hoscode'    => $user['hoscode'],
-            'hosname'    => (new HospitalModel())->nameOf($user['hoscode']),
+            'user_id' => (int) $user['id'],
+            'line_id' => $user['line_user_id'],
+            'name'    => trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? '')) ?: ($user['display_name'] ?? ''),
+            'picture' => $user['picture_url'] ?? '',
+            'hoscode' => $user['hoscode'],
+            'hosname' => $hospitals->nameOf($user['hoscode']),
+            // เก็บอำเภอไว้ด้วย เพราะ Admin ระดับอำเภอใช้ค่านี้กำหนดขอบเขตข้อมูล
+            'distcode'   => $distcode,
+            'ampurname'  => $hospitals->districtName($distcode),
             'role'       => $user['role'],
             'status'     => $user['status'],
             'registered' => $registered,

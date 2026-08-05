@@ -51,4 +51,62 @@ class HospitalModel extends Model
 
         return $row['hosname'] ?? $hoscode;
     }
+
+    /**
+     * รหัสอำเภอของหน่วยบริการ (ใช้กำหนดขอบเขตของ Admin ระดับอำเภอ)
+     */
+    public function districtOf(?string $hoscode): ?string
+    {
+        if ($hoscode === null || $hoscode === '') {
+            return null;
+        }
+
+        $row = $this->find($hoscode);
+
+        return ($row['distcode'] ?? '') !== '' ? $row['distcode'] : null;
+    }
+
+    public function districtName(?string $distcode): string
+    {
+        if ($distcode === null || $distcode === '') {
+            return '-';
+        }
+
+        $row = $this->where('distcode', $distcode)
+            ->where('ampurname IS NOT NULL')
+            ->first();
+
+        return $row['ampurname'] ?? $distcode;
+    }
+
+    /**
+     * หน่วยบริการทั้งหมดในอำเภอหนึ่ง เรียงตามชื่อ (ใช้กับ dropdown ตัวกรอง)
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function inDistrict(string $distcode): array
+    {
+        if ($distcode === '') {
+            return [];
+        }
+
+        return $this->where('distcode', $distcode)->orderBy('hosname', 'ASC')->findAll();
+    }
+
+    /**
+     * รหัสหน่วยบริการทั้งหมดในอำเภอหนึ่ง
+     *
+     * @return list<string>
+     */
+    public function codesInDistrict(string $distcode): array
+    {
+        if ($distcode === '') {
+            return [];
+        }
+
+        return array_column(
+            $this->select('hoscode')->where('distcode', $distcode)->findAll(),
+            'hoscode'
+        );
+    }
 }

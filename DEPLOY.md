@@ -95,17 +95,35 @@ docker compose exec db mysql -u root -p"$DB_ROOT_PASS" phrcheck_db \
 curl -I http://127.0.0.1:8087/login     # ต้องได้ 200
 ```
 
-**ตรวจว่าโหมดเป็น production จริง** (สำคัญ — ถ้ายังเป็น development หน้า error จะโชว์ path ไฟล์และ stack trace ให้คนนอกเห็น):
+**ตรวจว่าโหมดเป็น production จริง** (สำคัญ — ถ้ายังเป็น development หน้า error จะโชว์ path ไฟล์และ stack trace ให้คนนอกเห็น)
+
+วิธีที่ชัดที่สุด ถามระบบตรง ๆ:
 
 ```bash
-docker compose exec php php -r 'echo getenv("CI_ENVIRONMENT") ?: "(ไม่ได้ตั้ง)", PHP_EOL;'
-# ต้องได้ production
-
-curl -s http://127.0.0.1:8087/login | grep -c debugbar
-# ต้องได้ 0
+docker compose exec php php spark env
 ```
 
-ถ้าได้ `development` แปลว่าแก้ `.env` แล้วยังไม่ได้ `docker compose up -d` ใหม่ (แก้ `.env` เฉย ๆ ไม่มีผลจนกว่าจะสร้าง container ใหม่)
+ต้องขึ้นว่า `Your environment is currently set as production.`
+
+ตรวจซ้ำจากฝั่งเว็บ — ในโหมด development CodeIgniter จะฝัง debug toolbar ลงในหน้าเว็บ:
+
+```bash
+curl -s https://mkho-mis.moph.go.th/phrcheck/login | grep -c debugbar
+```
+
+| ผลลัพธ์ | แปลว่า |
+|---|---|
+| `0` | production ✓ |
+| `1` ขึ้นไป | ยังเป็น development ✗ |
+
+> ⚠️ **อย่าใช้หน้า 404 ตัดสิน** — CodeIgniter แสดงหน้า `404 Sorry! Cannot seem to find the page...` เหมือนกันทั้งสองโหมด ไม่ได้บอกอะไรเลย
+> ต้องดูจากหน้าปกติ (เช่น `/login`) ว่ามี debug toolbar โผล่มุมล่างขวาหรือไม่
+
+ถ้ายังได้ `development` แปลว่าแก้ `.env` แล้วยังไม่ได้สร้าง container ใหม่ — **`docker compose restart` ไม่พอ** ต้อง:
+
+```bash
+docker compose up -d
+```
 
 ---
 

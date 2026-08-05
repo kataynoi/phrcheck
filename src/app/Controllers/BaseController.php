@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\Libraries\DataScope;
 use CodeIgniter\Controller;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -51,26 +52,34 @@ abstract class BaseController extends Controller
     protected function currentUser(): array
     {
         return [
-            'id'      => (int) $this->session->get('user_id'),
-            'name'    => (string) $this->session->get('name'),
-            'hoscode' => $this->session->get('hoscode'),
-            'hosname' => (string) $this->session->get('hosname'),
-            'role'    => (string) $this->session->get('role'),
-            'picture' => (string) $this->session->get('picture'),
+            'id'        => (int) $this->session->get('user_id'),
+            'name'      => (string) $this->session->get('name'),
+            'hoscode'   => $this->session->get('hoscode'),
+            'hosname'   => (string) $this->session->get('hosname'),
+            'distcode'  => $this->session->get('distcode'),
+            'ampurname' => (string) $this->session->get('ampurname'),
+            'role'      => (string) $this->session->get('role'),
+            'picture'   => (string) $this->session->get('picture'),
         ];
     }
 
+    /** ผู้ดูแลระบบระดับจังหวัด — เห็นและแก้ได้ทุกหน่วยบริการ */
     protected function isAdmin(): bool
     {
-        return $this->session->get('role') === 'admin';
+        return $this->session->get('role') === DataScope::ROLE_ADMIN;
+    }
+
+    /** ผู้ดูแลระดับอำเภอ — เห็นและแก้ได้ทุกหน่วยบริการในอำเภอตัวเอง */
+    protected function isDistrictAdmin(): bool
+    {
+        return $this->session->get('role') === DataScope::ROLE_DISTRICT;
     }
 
     /**
-     * ขอบเขตข้อมูลของผู้ใช้: admin = null (เห็นทุกหน่วยบริการ),
-     * ผู้ใช้ทั่วไป = รหัสหน่วยบริการของตัวเอง
+     * ขอบเขตข้อมูลของผู้ใช้ที่ล็อกอินอยู่ — ทุก query ต้องผ่านตัวนี้
      */
-    protected function scopeHoscode(): ?string
+    protected function scope(): DataScope
     {
-        return $this->isAdmin() ? null : (string) $this->session->get('hoscode');
+        return DataScope::fromSession();
     }
 }

@@ -64,15 +64,24 @@
                         </td>
                         <td>
                             <?php if ($row['id'] === (int) $user['id']): ?>
-                                <span class="badge bg-warning text-dark">Admin (คุณ)</span>
+                                <span class="badge bg-warning text-dark">Admin จังหวัด (คุณ)</span>
                             <?php else: ?>
                                 <form method="post" action="<?= site_url('admin/users/role/' . $row['id']) ?>" class="d-inline">
                                     <?= csrf_field() ?>
                                     <select name="role" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
-                                        <option value="user" <?= $row['role'] === 'user' ? 'selected' : '' ?>>User</option>
-                                        <option value="admin" <?= $row['role'] === 'admin' ? 'selected' : '' ?>>Admin</option>
+                                        <?php foreach ($roles as $value => $label): ?>
+                                            <option value="<?= esc($value, 'attr') ?>" <?= $row['role'] === $value ? 'selected' : '' ?>>
+                                                <?= esc($label) ?>
+                                            </option>
+                                        <?php endforeach; ?>
                                     </select>
                                 </form>
+                                <?php if ($row['role'] === 'district'): ?>
+                                    <div class="small text-muted mt-1">
+                                        <i class="bi bi-geo-alt"></i>
+                                        เห็นทั้งอำเภอ<?= esc($row['ampurname'] ?: '-') ?>
+                                    </div>
+                                <?php endif; ?>
                             <?php endif; ?>
                         </td>
                         <td>
